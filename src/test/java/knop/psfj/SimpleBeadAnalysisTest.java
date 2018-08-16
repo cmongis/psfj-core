@@ -16,14 +16,14 @@ public class SimpleBeadAnalysisTest {
     
     
     @Test
-    public void testMonoChannel() {
+    public void testMonoChannel() throws Exception {
         
         BeadImageManager manager = new BeadImageManager();
         
         manager.add("./src/test/resources/ch1_ApoTIRF_60x.tif");
         
         manager.autoFocus(0);
-         manager.setThresholdValue(1533);
+        manager.setThresholdValue(1533);
         manager.setFrameSize(17);
        
         

@@ -10,5 +10,7 @@ package knop.psfj;
  * @author cyril
  */
 public class BeadImageLoadingException extends Exception {
-    
+    public BeadImageLoadingException(String message) {
+        super(message);
+    }
 }

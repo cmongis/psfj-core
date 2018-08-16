@@ -14,7 +14,7 @@ import java.util.List;
 public interface BeadImageLoader {
     
     
-    List<BeadImage> load(String fileAddress) throws BeadImageLoadingException;
+    List<BeadImage> load(String fileAddress, boolean forceLoadingFromDisk) throws BeadImageLoadingException;
     
     
 }

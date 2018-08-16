@@ -58,6 +58,7 @@ import loci.formats.ChannelSeparator;
 import loci.formats.FormatException;
 import loci.plugins.util.ImageProcessorReader;
 import loci.plugins.util.LociPrefs;
+import mongis.utils.task.ProgressHandler;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
@@ -93,6 +94,13 @@ public class BeadImage extends Observable {
      */
     private ImageProcessorReader ipr = new ImageProcessorReader();
 
+    
+    /**
+     * Channel from which each plane should be read;
+     */
+    
+    private int sourceChannel = 0;
+    
     /**
      * Rhe original image.
      */
@@ -341,6 +349,18 @@ public class BeadImage extends Observable {
      *
      * @param s the address of the file
      */
+    
+    public BeadImage(ImageProcessorReader reader, int channel) {
+        
+        super();
+        setFileAddress(reader.getCurrentFile());
+        this.ipr = reader;
+        this.sourceChannel = channel;
+        
+        
+    }
+    
+    
     public BeadImage(String s) {
         super();
         setFileAddress(s);
@@ -645,13 +665,20 @@ public class BeadImage extends Observable {
     /**
      * load the stack into memory.
      */
+    
     public synchronized void workFromMemory() {
+        workFromMemory(ProgressHandler.NONE);
+    }
+    
+    
+    public synchronized void workFromMemory(ProgressHandler handler) {
 		// if the fileAddress is not equal to null, this means that
         // the image has not been previously load into memory
         if (fileAddress != null && stack == null) {
             System.out.println("Loading image in memory...");
             setProgress(0, "Loading image in memory...");
-
+            handler.setProgress(0, 100);
+            
             try {
 				// BF.openImagePlus(path)
 
@@ -659,65 +686,55 @@ public class BeadImage extends Observable {
 				// stack = new
                 // Opener().openImage(fileAddress).getImageStack();//
                 // IJ.openImage(fileAddress).getStack();
-                ImageProcessorReader ipr = new ImageProcessorReader(
+                if(ipr == null) {
+                      ipr = new ImageProcessorReader(
                         new ChannelSeparator(LociPrefs.makeImageReader()));
+                      ipr.setId(fileAddress);
+                }
                 DescriptiveStatistics standardDeviations = new DescriptiveStatistics();
 
-                ipr.setId(fileAddress);
+               
 
                 int width = ipr.getSizeX();
                 int height = ipr.getSizeY();
                 int num = ipr.getImageCount();
-                int numChannel = ipr.getSizeC();
-                int bitsPerPixel = ipr.getBitsPerPixel();
 
                 double stdDev;
                 double min;
                 double max;
 
-                // if a second channel in the image is detected
-                boolean isSecondChannel = false;
-                BeadImage secondChannel = null;
-                ImageStack secondStack = null;
+                
 
-                if (numChannel == 2) {
-
-                    secondChannel = new BeadImage();
-                    secondChannel.setFileAddress(fileAddress);
-                    secondChannel.setImageName(secondChannel.getImageName()
-                            + "_channel_2");
-                    secondStack = new ImageStack(width, height);
-                    isSecondChannel = true;
-                    secondChannel.setStack(secondStack);
-
-                    notifyObservers(MSG_NEW_CHANNEL_DETECTED,
-                            "Two channels detected", null, secondChannel);
-
-                }
-
-                stack = new ImageStack(width, height);
+                ImageStack newStack = new ImageStack(width, height);
 
                 for (int i = 0; i != num; i++) {
+                    
+                    // setting the progress
                     setProgress(i, num);
-                    setStatus("Loading slice " + (i + 1) + "/" + num + "...");
+                    handler.setProgress(i, num);
+                    
+                    // setting the status
+                    String status = new StringBuilder()
+                            .append("Loading slice ")
+                            .append(i+1)
+                            .append("/")
+                            .append(num)
+                            .append("...")
+                            .toString();
+                    handler.setStatus(status);
+                    setStatus(status);
 
-                    ImageProcessor ip = ipr.openProcessors(i)[0];
-
-                    if (isSecondChannel) {
-                        i++;
-                        ImageProcessor ip2 = ipr.openProcessors(i)[0];
-                        secondStack.addSlice(ip2);
-                        secondChannel.setStatus("Loading slice " + (i + 1) + "/"
-                                + num + "...");
-                        secondChannel.setProgress(i, num);
-                    }
-
+                    // loading the plane
+                    ImageProcessor ip = getPlane(i);
+                 
                     min = ip.getMin();
                     max = ip.getMax();
 
                     if (min < minIntentisyOfWholeStack) {
                         minIntentisyOfWholeStack = min;
                     }
+                    
+                    
                     if (max > maxIntensityOfWholeStack) {
                         maxIntensityOfWholeStack = max;
                     }
@@ -728,14 +745,13 @@ public class BeadImage extends Observable {
                         beadFocusPlane = i;
                     }
                     standardDeviations.addValue(stdDev);
-                    stack.addSlice(ip);
+                    newStack.addSlice(ip);
                     updateView(ip);
+                    
+                    
                 }
-                if (isSecondChannel) {
-                    autoFocus();
-                    secondChannel.autoFocus();
-                    secondChannel.setProgress(100);
-                }
+                stack = newStack;
+                
                 try {
                     ipr.close();
                 } catch (Exception e) {
@@ -743,6 +759,9 @@ public class BeadImage extends Observable {
                 }
                 setChanged();
                 notifyObservers(new Message(this, MSG_IMAGE_OKAY));
+                
+                handler.setProgress(1, 1);
+                handler.setStatus("Stack loaded");
                 setStatus("Done.");
                 setProgress(100);
 
@@ -750,7 +769,7 @@ public class BeadImage extends Observable {
                 setImageWidth(stack.getWidth());
 
                 isValid = true;
-                new ImagePlus("", stack).resetDisplayRange();
+                //new ImagePlus("", stack).resetDisplayRange();
                 // openImage();
 
             } catch (NullPointerException e) {
@@ -768,7 +787,6 @@ public class BeadImage extends Observable {
                 setProgress(0, "Image not reachable.");
                 e.printStackTrace();
             }
-
         }
     }
 
@@ -988,7 +1006,7 @@ public class BeadImage extends Observable {
             } else {
                 try {
 
-                    ImageProcessor plane = ipr.openProcessors(id)[0];
+                    ImageProcessor plane = ipr.openProcessors(id*ipr.getSizeC()+sourceChannel)[0];
 
                     plane.setColorModel(lut.getColorModel());
 
