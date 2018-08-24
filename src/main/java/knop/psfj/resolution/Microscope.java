@@ -53,6 +53,8 @@ public class Microscope {
 
 	public static String WAVELENGTH_KEY = "wavelength";
 
+        public static String WAVELENGTHS_KEY = "wavelengths";
+        
 	public static String UNIT_KEY = "unit";
 
 	public static String IDENTIFIER_KEY = "id";
@@ -556,6 +558,18 @@ public class Microscope {
 	public Objective getObjective(String name, double magnification) {
 		return new Objective(name, magnification);
 	}
+
+    public Microscope copyWithWavelength(double waveLength) {
+        
+        Microscope m = new Microscope();
+        m.setCalibration(cal);
+        m.setUnit(m.getUnit());
+        m.setWaveLength(waveLength);
+        m.setBeadDiameter(beadDiameter);
+        m.setNA(NA);
+        return m;
+        
+    }
 
 	public class Objective implements Comparable<Objective> {
 		String name;
