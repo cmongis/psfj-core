@@ -66,7 +66,7 @@ public class PDFSumUpExporter {
 	 * @param arg
 	 *           the arguments
 	 */
-	public static void main(String[] arg) {
+	public static void main(String[] arg) throws Exception{
 		final BeadImageManager manager = new BeadImageManager();
 
 		// manager.add("/home/cyril/test_img/colocalisation/gfp1.tif");

@@ -77,7 +77,7 @@ public class PDFExporter extends Observable {
 	 *
 	 * @param arg the arguments
 	 */
-	public static void main(String[] arg) {
+	public static void main(String[] arg) throws Exception {
 
 		BeadImageManager manager = new BeadImageManager();
 		manager.add("/home/cyril/test_img/6/6_gfp.tif");

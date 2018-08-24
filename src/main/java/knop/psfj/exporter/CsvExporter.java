@@ -109,7 +109,7 @@ public class CsvExporter {
 	 *
 	 * @param args the arguments
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 
 		BeadImageManager manager = new BeadImageManager();
 		manager.add("/home/cyril/test_img/6/6_gfp.tif");
