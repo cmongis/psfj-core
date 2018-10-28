@@ -84,7 +84,7 @@
         <dependency>
 	    <groupId>com.github.cmongis</groupId>
 	    <artifactId>mongis-java-utils</artifactId>
-	    <version>-SNAPSHOT</version>
+	    <version>master-SNAPSHOT</version>
 	</dependency>
 
     </dependencies>
